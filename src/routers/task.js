@@ -31,12 +31,14 @@ router.get("/tasks", auth, async (req, res) => {
   const sort = {};
 
   if (req.query.completed) {
-    match.completed = req.query.completed === "true";
+    match.completed = req.query.completed === "true" ? true : false;
   }
 
   if (req.query.sortBy) {
     const parts = req.query.sortBy.split(":");
     sort[parts[0]] = parts[1] === "desc" ? -1 : 1;
+  } else {
+    sort["createdAt"] = -1;
   }
 
   try {
