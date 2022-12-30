@@ -29,17 +29,14 @@ router.get("/users/me", auth, async (req, res, next) => {
 
 // Update the user
 router.put("/users/me", auth, async (req, res) => {
-  const updates = Object.keys(req.body);
-  const allowUpdates = ["name", "email", "password", "age"];
+  const name = req.body.name;
 
-  const isMatched = updates.every((update) => allowUpdates.includes(update));
-
-  if (!isMatched) {
-    return res.status(400).send({ error: "Invalid Updates" });
+  if (!name) {
+    return res.status(400).send({ error: "Name required!" });
   }
 
   try {
-    updates.forEach((update) => (req.user[update] = req.body[update]));
+    req.user["name"] = name;
     await req.user.save();
     res.status(200).send(req.user);
   } catch (e) {
@@ -125,7 +122,7 @@ router.post(
       .toBuffer();
     req.user.avatar = buffer;
     await req.user.save();
-    res.send("Avatar updated successfully!");
+    res.send({ message: "Avatar updated successfully!", user: req.user });
   },
   (req, res, next) => {
     res.send("hi");
