@@ -38,7 +38,9 @@ router.put("/users/me", auth, async (req, res) => {
   try {
     req.user["name"] = name;
     await req.user.save();
-    res.status(200).send(req.user);
+    res
+      .status(200)
+      .send({ user: req.user, message: "Profile updated successfully!" });
   } catch (e) {
     res.status(404).send(e);
   }
@@ -67,8 +69,8 @@ router.post("/users/login", async (req, res) => {
       user,
       token,
     });
-  } catch (e) {
-    res.status(400).send(e);
+  } catch (err) {
+    res.status(400).send(err.message);
   }
 });
 

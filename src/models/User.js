@@ -1,126 +1,131 @@
-const mongoose = require('mongoose');
-const validator= require('validator');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const Task = require('./Task');
+const mongoose = require("mongoose");
+const validator = require("validator");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const Task = require("./Task");
 
 // User schema
-const userSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema(
+  {
     name: {
-        type: String,
-        required: true,
-        trim: true
+      type: String,
+      required: true,
+      trim: true,
     },
     email: {
-        type: String,
-        unique: true,
-        required: true,
-        trim: true,
-        lowercase: true,
-        validate(value) { 
-            if (!validator.isEmail(value)) {
-                throw new Error('Email is invalid');
-            }
+      type: String,
+      unique: true,
+      required: true,
+      trim: true,
+      lowercase: true,
+      validate(value) {
+        if (!validator.isEmail(value)) {
+          throw new Error("Email is invalid");
         }
+      },
     },
     password: {
-        type: String,
-        required: true,
-        trim: true,
-        minlength: 7,
-        validate(value) {
-            if (value.toLowerCase().includes('password')) {
-                throw new Error('the word password not contain in password.');
-            }
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 7,
+      validate(value) {
+        if (value.toLowerCase().includes("password")) {
+          throw new Error("the word password not contain in password.");
         }
+      },
     },
     age: {
-        type: Number,
-        default: 0,        
-        validate(value) {
-            if (value < 0) {
-                throw new Error('Age must be a positive number');
-            }
+      type: Number,
+      default: 0,
+      validate(value) {
+        if (value < 0) {
+          throw new Error("Age must be a positive number");
         }
+      },
     },
-    tokens: [{
+    tokens: [
+      {
         token: {
-            type: String,
-            required: true
-        }
-    }],
+          type: String,
+          required: true,
+        },
+      },
+    ],
     avatar: {
-        type: Buffer
-    }
-}, {
-    timestamps: true
-});
+      type: Buffer,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
 // virtual property
-userSchema.virtual('tasks', {
-    ref: 'Task',
-    localField: '_id',
-    foreignField: 'owner'
+userSchema.virtual("tasks", {
+  ref: "Task",
+  localField: "_id",
+  foreignField: "owner",
 });
 
 // parse data that display
 userSchema.methods.toJSON = function () {
-    const user = this;
-    const userObject = user.toObject();
+  const user = this;
+  const userObject = user.toObject();
 
-    delete userObject.password;
-    delete userObject.tokens;
+  delete userObject.password;
+  delete userObject.tokens;
 
-    return userObject;
+  return userObject;
 };
 
 // Generate Token
 userSchema.methods.generateAuthToken = async function () {
-    const user = this;
-    const token = jwt.sign({ _id: user._id.toString() }, process.env.JWT_SECRET);
+  const user = this;
+  const token = jwt.sign({ _id: user._id.toString() }, process.env.JWT_SECRET);
 
-    user.tokens = user.tokens.concat({ token });
-    await user.save();
+  user.tokens = user.tokens.concat({ token });
+  await user.save();
 
-    return token; 
+  return token;
 };
 
 // User login by credentials
 userSchema.statics.findByCredentials = async (email, password) => {
-    const user = await User.findOne({ email });
+  const user = await User.findOne({ email });
 
-    if (!user) {
-        throw new Error('Unable to login');
-    }
+  if (!user) {
+    throw new Error("User or password not matched!");
+  }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+  const isMatch = await bcrypt.compare(password, user.password);
 
-    if (!isMatch) {
-        throw new Error('Unable to login');
-    }
+  if (!isMatch) {
+    throw new Error("User or password not matched!");
+  }
 
-    return user;
+  return user;
 };
 
 // Hash the password before save the user
-userSchema.pre('save', async function (next) {
-    const user = this;
+userSchema.pre("save", async function (next) {
+  const user = this;
 
-    if (user.isModified('password')) {
-        user.password = await bcrypt.hash(user.password, 8);
-    }
+  if (user.isModified("password")) {
+    user.password = await bcrypt.hash(user.password, 8);
+  }
 
-    next();
+  next();
 });
 
 // delete all task of removed user
-userSchema.pre('remove', async function (next) {
-    const user = this;
-    await Task.deleteMany({ owner: user._id });
-    next();
+userSchema.pre("remove", async function (next) {
+  const user = this;
+  await Task.deleteMany({ owner: user._id });
+  next();
 });
 
 // User model
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model("User", userSchema);
 
 module.exports = User;
