@@ -3,6 +3,7 @@ require("./db/mongoose");
 const userRouter = require("./routers/user");
 const taskRouter = require("./routers/task");
 const cors = require("cors");
+require("dotenv").config();
 
 const app = express();
 const port = process.env.PORT;
